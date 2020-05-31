@@ -10,6 +10,7 @@ start(Name) ->
 
 stop(Name) ->
   global:unregister_name(Name),
+  io:format("You are successfuly unregistered~n"),
   ok.
 
 init(Name) ->
@@ -19,19 +20,25 @@ init(Name) ->
 
 loop(Name) ->
   {ok, ProductName} = io:read("Enter product name: "),
-  if
-    ProductName == stop ->
-      stop(Name);
-    true ->
-      compare_server:checkPrice(ProductName, Name)
+  case ProductName == stop of
+    true -> stop(Name);
+
+    _ -> compare_server:checkPrice(ProductName, Name)
   end,
+
   receive
     {nodata, Info} ->
       io:format(Info),
       timer:sleep(1),
       loop(Name);
+
     {reply, Price} ->
       io:format("The best price found is ~B~n", [Price]),
+      timer:sleep(1),
+      loop(Name);
+
+    {reply, Price, Occurrence} ->
+      io:format("The best price found is ~B. There were ~B same queries~n", [Price, Occurrence]),
       timer:sleep(1),
       loop(Name)
   end.

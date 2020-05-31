@@ -35,8 +35,8 @@ handle_cast({delete, Pid}, Children) ->
   {noreply, Children -- [Pid]};
 
 handle_cast({compare, ProductName, ClientName}, Children) ->
-  ChildPid = spawn_link(compare, price_compare, [ClientName]),
-  {noreply, Children++[ChildPid]};
+  Pid = spawn_link(compare, price_compare, [ProductName, ClientName]),
+  {noreply, Children++[Pid]};
 
 handle_cast(stop, Children) ->
   {stop, normal, Children}.
@@ -46,10 +46,10 @@ install_db() ->
   mnesia:create_schema([node()]),
   mnesia:start(),
   case mnesia:create_table(queries, [{attributes, record_info(fields, queries)}, {disc_copies, [node()]}]) of
-    {atomic, ok} -> io:format("Table successfuly created");
+    {atomic, ok} -> io:format("Table successfuly created~n");
 
-    {aborted, {already_exists, queries}} -> io:format("Table queries already exists");
+    {aborted, {already_exists, queries}} -> io:format("Table queries already exists~n");
 
-    _ -> io:format("Uknown error")
+    _ -> io:format("Uknown error~n")
   end,
   mnesia:wait_for_tables([queries], 5000).
