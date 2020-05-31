@@ -5,23 +5,23 @@
 -export([price_compare/2]).
 
 
-price_compare(ProductName, Pid) ->
+price_compare(ProductName, Name) ->
   spawn_link(price_checker, check_price, [self()]),
   spawn_link(price_checker, check_price, [self()]),
-  loop({[], Pid}).
+  loop({[], Name}).
 
-loop({Results, Pid}) ->
+loop({Results, Name}) ->
   receive
     {price, Price} when length(Results) == 1 ->
-      Pid ! {reply, lists:min(Results++[Price])},
-      exit(normal);
+      global:send(Name, {reply, lists:min(Results++[Price])}),
+      compare_server:deleteMe(self());
     {price, Price} ->
-      loop({Results++[Price], Pid})
+      loop({Results++[Price], Name})
   after
     300 ->
       case length(Results) of
-        0 -> Pid ! {nodata, "No data aviable for this product.~n"};
-        _ -> Pid ! {reply, lists:min(Results)}
+        0 -> global:send(Name, {nodata, "No data aviable for this product.~n"});
+        _ -> global:send(Name, {reply, lists:min(Results)})
       end,
-      exit(normal)
+      compare_server:deleteMe(self())
   end.
