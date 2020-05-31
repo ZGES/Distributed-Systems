@@ -6,22 +6,22 @@
 
 
 price_compare(ProductName, Pid) ->
-  spawn(price_checker, check_price, [self()]),
-  spawn(price_checker, check_price, [self()]),
+  spawn_link(price_checker, check_price, [self()]),
+  spawn_link(price_checker, check_price, [self()]),
   loop({[], Pid}).
 
 loop({Results, Pid}) ->
   receive
     {price, Price} when length(Results) == 1 ->
-      Pid ! lists:min(Results++[Price]),
-      compare_server:deleteMe(self());
+      Pid ! {reply, lists:min(Results++[Price])},
+      exit(normal);
     {price, Price} ->
       loop({Results++[Price], Pid})
   after
     300 ->
       case length(Results) of
-        0 -> Pid ! "No data aviable for this product price.";
-        _ -> Pid ! lists:min(Results)
+        0 -> Pid ! {nodata, "No data aviable for this product.~n"};
+        _ -> Pid ! {reply, lists:min(Results)}
       end,
-      compare_server:deleteMe(self())
+      exit(normal)
   end.
