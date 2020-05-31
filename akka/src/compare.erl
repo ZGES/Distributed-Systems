@@ -12,14 +12,14 @@ price_compare(ProductName, Pid) ->
 
 loop({Results, Pid}) ->
   receive
-    {price, Price} when size(Results) == 1 ->
+    {price, Price} when length(Results) == 1 ->
       Pid ! lists:min(Results++[Price]),
       compare_server:deleteMe(self());
     {price, Price} ->
       loop({Results++[Price], Pid})
   after
     300 ->
-      case size(Results) of
+      case length(Results) of
         0 -> Pid ! "No data aviable for this product price.";
         _ -> Pid ! lists:min(Results)
       end,
