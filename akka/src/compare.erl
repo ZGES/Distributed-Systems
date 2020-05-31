@@ -8,19 +8,20 @@
 price_compare(ProductName, Name) ->
   spawn_link(price_checker, check_price, [self()]),
   spawn_link(price_checker, check_price, [self()]),
-  loop({[], Name}).
+  erlang:start_timer(300, self(), []),
+  loop([], Name).
 
-loop({Results, Name}) ->
+loop(Results, Name) ->
   receive
     {price, Price} when length(Results) == 1 ->
       global:send(Name, {reply, lists:min(Results++[Price])}),
       compare_server:deleteMe(self());
     {price, Price} ->
-      loop({Results++[Price], Name})
-  after
-    300 ->
+      loop(Results++[Price], Name);
+    {timeout, _, _} ->
       case length(Results) of
-        0 -> global:send(Name, {nodata, "No data aviable for this product.~n"});
+        0 -> io:format("Timeouted request for PID: ~w~n", [self()]),
+          global:send(Name, {nodata, "No data aviable for this product.~n"});
         _ -> global:send(Name, {reply, lists:min(Results)})
       end,
       compare_server:deleteMe(self())
