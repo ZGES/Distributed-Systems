@@ -2,10 +2,10 @@
 -author("Piotr").
 
 %% API
--export([price_compare/2]).
+-export([price_compare/1]).
 
 
-price_compare(ProductName, Name) ->
+price_compare(Name) ->
   spawn_link(price_checker, check_price, [self()]),
   spawn_link(price_checker, check_price, [self()]),
   erlang:start_timer(300, self(), []),

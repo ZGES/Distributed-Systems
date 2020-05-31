@@ -6,11 +6,15 @@
 -export([start/0, stop/0, checkPrice/2, deleteMe/1]).
 -export([init/1, handle_call/3, handle_cast/2]).
 
+-record(queries, {productName, occurrences}).
+
 %API
 start() ->
+  install_db(),
   gen_server:start_link({global, server}, ?MODULE, [], []).
 
 stop() ->
+  mnesia:stop(),
   gen_server:cast(server, stop).
 
 checkPrice(ProductName, ClientName) ->
@@ -31,8 +35,21 @@ handle_cast({delete, Pid}, Children) ->
   {noreply, Children -- [Pid]};
 
 handle_cast({compare, ProductName, ClientName}, Children) ->
-  ChildPid = spawn_link(compare, price_compare, [ProductName, ClientName]),
+  ChildPid = spawn_link(compare, price_compare, [ClientName]),
   {noreply, Children++[ChildPid]};
 
 handle_cast(stop, Children) ->
   {stop, normal, Children}.
+
+%server side functions
+install_db() ->
+  mnesia:create_schema([node()]),
+  mnesia:start(),
+  case mnesia:create_table(queries, [{attributes, record_info(fields, queries)}, {disc_copies, [node()]}]) of
+    {atomic, ok} -> io:format("Table successfuly created");
+
+    {aborted, {already_exists, queries}} -> io:format("Table queries already exists");
+
+    _ -> io:format("Uknown error")
+  end,
+  mnesia:wait_for_tables([queries], 5000).
