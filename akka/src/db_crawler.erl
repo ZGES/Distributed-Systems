@@ -18,4 +18,5 @@ getOccur(ProductName, Pid) ->
     end
   end,
   io:format("DB updated~n"),
-  mnesia:activity(transaction, Func).
+  mnesia:activity(transaction, Func),
+  exit(normal).
